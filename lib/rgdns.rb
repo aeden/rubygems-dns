@@ -14,6 +14,7 @@ require 'rgdns/webhook/app'
 require 'rgdns/monitor/app'
 require 'rgdns/rubygems_client'
 require 'rgdns/gem_version_data'
+require 'rgdns/domain_writer'
 
 require 'rgdns/resque_job'
 require 'rgdns/resque_jobs/fetch_store'

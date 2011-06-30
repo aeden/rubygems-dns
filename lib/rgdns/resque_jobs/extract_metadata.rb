@@ -22,9 +22,8 @@ module Rgdns
           metadata = Rgdns::GemVersionData.new( contents )
          
           logger.info "Writing to DNS database"
-          # TODO: implement the DB writing
-          require 'pp'
-          pp metadata.specification
+          domain_writer = Rgdns::DomainWriter.new
+          domain_writer.write(metadata.specification)
 
         rescue Gem::Package::FormatError => e
           logger.warn "<#{e.class} #{e.message}> means #{@gemfile} cannot opened by Ruby #{RUBY_VERSION} with Rubygems #{Gem::VERSION}"
