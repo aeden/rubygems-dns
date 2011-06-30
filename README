@@ -1,0 +1,9 @@
+This library is used to handle webhook calls from Rubygems.org and record gem dependency data into a database that backs PowerDNS so that the dependency data can be retrieved with DNS queries.
+
+To run the Sinatra server locally:
+
+  bundle exec rackup config.ru
+
+To trigger the webhook:
+
+  curl -d @docs/sample-post.json http://localhost:9292/webhook/accept
