@@ -7,3 +7,7 @@ To run the Sinatra server locally:
 To trigger the webhook:
 
   curl -d @docs/sample-post.json http://localhost:9292/webhook/accept
+
+To run the resque workers:
+
+  rake -I lib QUEUE=* resque:work
