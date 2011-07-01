@@ -57,7 +57,8 @@ File.open( dump_file, "r" ) do |f|
     count += 1
     begin
       specification = load_specification( lines, delimiter )
-      #domain_writer( specification )
+      #next unless specification.name == 'objective_command'
+      domain_writer.write( specification )
       puts count if count % 1000 == 0
     rescue SyntaxError => se
       $stderr.puts "Syntax error in specification #{count}"
@@ -66,6 +67,7 @@ File.open( dump_file, "r" ) do |f|
       $stderr.puts "Error in processing specification #{count} #{e}"
       dump_specification( count, lines )
     end
+    #break if count >= 10000
   end
 
   puts "Processed #{count} specifications"
