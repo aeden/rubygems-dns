@@ -38,6 +38,7 @@ def read_specification_lines( f, delimiter )
 end
 
 def dump_specification( count, lines )
+  Dir.mkdir( "errors" ) unless File.directory?( "errors" )
   File.open( "errors/#{count}.spec", "w+" ) do |f|
     lines.each { |l| f.write l }
   end
