@@ -1,0 +1,74 @@
+#!/usr/bin/env ruby
+########################################################################
+# 
+# This script takes as an argument the output of rgdns-dump-gemology-db-specs
+# and loads it into the rubydns server
+#
+########################################################################
+
+require 'rgdns/domain_writer'
+require 'yaml'
+require 'rubygems/specification'
+
+dump_file = ARGV.shift
+abort "Usage: #{Filename.basename( $0 )} gemology-dump-file" unless dump_file
+
+def load_specification( lines, delimiter )
+  spec_text = lines.join('')
+
+  if spec_text =~ /\A---/ then
+    spec = Gem::Specification.from_yaml( spec_text )
+  else
+    spec = eval( spec_text, nil )
+  end
+  return spec
+end
+
+def read_specification_lines( f, delimiter )
+  lines = []
+  
+  loop do
+    line = f.readline
+    break unless line
+    break if line == delimiter
+    lines << line
+  end
+
+  return lines
+end
+
+def dump_specification( count, lines )
+  File.open( "errors/#{count}.spec", "w+" ) do |f|
+    lines.each { |l| f.write l }
+  end
+end
+
+File.open( dump_file, "r" ) do |f|
+  delimiter     = f.readline
+  domain_writer = Rgdns::DomainWriter.new
+  count         = 0
+  puts "Using delimiter #{delimiter}"
+
+  loop do
+    break if f.eof?
+    lines = read_specification_lines( f, delimiter )
+    break unless lines.size > 0
+    count += 1
+    begin
+      specification = load_specification( lines, delimiter )
+      #domain_writer( specification )
+      puts count if count % 1000 == 0
+    rescue SyntaxError => se
+      $stderr.puts "Syntax error in specification #{count}"
+      dump_specification( count, lines )
+    rescue => e
+      $stderr.puts "Error in processing specification #{count} #{e}"
+      dump_specification( count, lines )
+    end
+  end
+
+  puts "Processed #{count} specifications"
+end
+
+
+
