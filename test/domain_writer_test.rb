@@ -4,7 +4,8 @@ require 'rgdns'
 class DomainWriterTest < Test::Unit::TestCase
   def test_write_domain
     domain_writer = Rgdns::DomainWriter.new
-    domain_writer.write(specification)
+    records = domain_writer.write(specification)
+    records.each { |r| puts r.join("\t") }
   end
 
   def test_op_transform_version_equal
