@@ -2,6 +2,8 @@ require 'base64'
 require 'logging'
 require 'sinatra'
 require 'resque/server'
+require 'sequel'
+require 'mysql'
 
 require 'rubygems/format'
 require 'rubygems/platform'
