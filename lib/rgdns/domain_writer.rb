@@ -8,18 +8,7 @@ module Rgdns
       upsert_soa_record(domain_id, dn)
       upsert_ns_records(domain_id, dn)
 
-      build_records(domain_id, specification)
-      #records = build_records(specification)
-      #records.each do |record|
-        #records_table.insert(
-          #:domain_id => domain_id,
-          #:name => record[0],
-          #:type => record[1],
-          #:ttl => record[2],
-          #:content => record[3],
-          #:change_date => Time.now.to_i
-        #)
-      #end
+      insert_records(domain_id, specification)
     end
 
     # Insert or update the domain record and return the domain id.
@@ -95,9 +84,7 @@ module Rgdns
     end
     private :insert_record_if_new
 
-    def build_records(domain_id, specification)
-      records = []
-
+    def insert_records(domain_id, specification)
       dn = dn(specification)
       fqdn = fqdn(specification)
       fqdn_latest = fqdn_latest(specification)
@@ -117,8 +104,6 @@ module Rgdns
       specification.development_dependencies.each do |dep|
         insert_record_if_new(domain_id, fqdn_devel, "PTR", 86400, dependency_to_qname(dep))
       end
-
-      records
     end
 
     def dependency_to_qname(dependency)
@@ -149,10 +134,6 @@ module Rgdns
       end
     end
 
-    def base_name
-      "index.rubygems.org"
-    end
-
     def op_transform_version(op, version)
       vr = version_as_reverse_array(version)
       case op
@@ -169,9 +150,14 @@ module Rgdns
 
     private
 
+    def base_name
+      "index.rubygems.org"
+    end
+
     def db_url
       db_url = ENV['DB_URL'] || 'mysql://root@localhost/powerdns'
     end
+
     def db 
       @db ||= Sequel.connect(db_url)
     end
