@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+######################################################################
+#
+# This is a quick utility to dump the raw specifications that are in 
+# the gemology database and put them in a uuid delimited format to parse
+# with another program.
+#
+# Usage:
+#   rgdns-dump-gemology-db-specifications sequle-connection-string output-file
+#
+######################################################################
+
+require 'sequel'
+
+usage = "Usage: #{File.basename($0)} sequel-connection-string output-file"
+sequel_options = ARGV.shift
+output_file    = ARGV.shift
+abort usage unless sequel_options && output_file
+
+delimiter   = [ `uuidgen -r`.strip, `uuidgen -r`.strip ].join(":")
+gemology_db = Sequel.connect( sequel_options )
+count       = 0
+
+puts "Dumping specifications to #{output_file} with delimiter #{delimiter}"
+File.open( output_file, "w+" ) do |of|
+  of.puts delimiter
+  sql = "SELECT specification FROM gem_version_raw_specifications"
+  gemology_db.fetch( sql ) do |row|
+    of.puts row[:specification]
+    count += 1
+    puts "... #{count}" if count % 10000 == 0
+  end
+end
+
+puts "Dumped #{count} specifications to #{output_file}"
+
