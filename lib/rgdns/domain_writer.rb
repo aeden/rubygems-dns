@@ -130,7 +130,7 @@ module Rgdns
       when Gem::Version then version_as_reverse_array(version.to_s)
       when String then version.split(".").reverse
       else
-        raise "Can't handle versin #{version}"
+        raise "Can't handle version #{version}"
       end
     end
 
