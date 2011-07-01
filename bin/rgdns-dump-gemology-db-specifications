@@ -27,6 +27,7 @@ File.open( output_file, "w+" ) do |of|
   sql = "SELECT specification FROM gem_version_raw_specifications"
   gemology_db.fetch( sql ) do |row|
     of.puts row[:specification]
+    of.puts delimiter
     count += 1
     puts "... #{count}" if count % 10000 == 0
   end
