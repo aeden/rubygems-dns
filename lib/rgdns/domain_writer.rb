@@ -1,3 +1,4 @@
+require 'sequel'
 module Rgdns
   class DomainWriter
   
@@ -41,15 +42,15 @@ module Rgdns
     end
     protected :upsert_ns_records
 
-    def upsert_latest_ptr(domain_id, fqdn_latest, fqdn)
-      latest_ptr_record = records_table.filter(:domain_id => domain_id, :name => fqdn_latest, :type => "CNAME").first
-      if latest_ptr_record
-        records_table.filter(:id => latest_ptr_record[:id]).update(:content => fqdn)
+    def upsert_latest_cname(domain_id, fqdn_latest, fqdn)
+      latest_cname_record = records_table.filter(:domain_id => domain_id, :name => fqdn_latest, :type => "CNAME").first
+      if latest_cname_record
+        records_table.filter(:id => latest_cname_record[:id]).update(:content => fqdn)
       else
         insert_record(domain_id, fqdn_latest, "CNAME", 600, fqdn) 
       end
     end
-    protected :upsert_latest_ptr
+    protected :upsert_latest_cname
 
     def upsert_partial_versions(domain_id, specification)
       fqdn = fqdn(specification)
@@ -65,6 +66,19 @@ module Rgdns
         end
       end
     end
+    protected :upsert_partial_versions
+
+    def insert_partial_versions(domain_id, specification)
+      fqdn = fqdn(specification)
+      vr = specification.version.to_s.split(".").reverse
+      while vr.shift
+        break if vr.empty?
+        name = name_version_to_qname(specification.name, vr)
+        record = records_table.filter(:domain_id => domain_id, :name => name).first
+        insert_record(domain_id, name, "CNAME", 600, fqdn) unless record
+      end
+    end
+    protected :insert_partial_versions
 
     def insert_record(domain_id, name, type, ttl, content)
       records_table.insert(
@@ -91,8 +105,12 @@ module Rgdns
       fqdn_devel = fqdn_devel(specification)
 
       # CNAME records
-      upsert_latest_ptr(domain_id, fqdn_latest, fqdn)
-      upsert_partial_versions(domain_id, specification)
+      if latest?(specification)
+        upsert_latest_cname(domain_id, dn_latest(specification), fqdn) 
+        upsert_partial_versions(domain_id, specification)
+      else
+        insert_partial_versions(domain_id, specification)
+      end
 
       # PTR record for latest version
       insert_record_if_new(domain_id, dn, "PTR", 86400, fqdn)
@@ -150,6 +168,20 @@ module Rgdns
 
     private
 
+    def latest
+      @latest ||= {}
+    end
+
+    def latest?(specification)
+      current_latest = latest[specification.name]
+      if current_latest.nil? || specification.version > current_latest
+        latest[specification.name] = specification.version
+        true
+      else
+        false
+      end
+    end
+
     def base_name
       "index.rubygems.org"
     end
@@ -171,19 +203,23 @@ module Rgdns
     end
 
     def fqdn(specification)
-      @fqdn ||= name_version_to_qname(specification.name, specification.version)
+      name_version_to_qname(specification.name, specification.version)
     end
 
     def fqdn_devel(specification)
-      @fqdn_devel ||= name_version_to_qname(specification.name + "-devel", specification.version)
+      name_version_to_qname(specification.name + "-devel", specification.version)
     end
 
     def dn(specification)
-      @dn ||= name_to_domain(specification.name)
+      name_to_domain(specification.name)
+    end
+
+    def dn_latest(specification)
+      ["latest", dn(specification)].join(".")
     end
 
     def fqdn_latest(specification)
-      @fqdn_latest ||= ["latest", fqdn(specification)].join(".")
+      ["latest", fqdn(specification)].join(".")
     end
 
   end
