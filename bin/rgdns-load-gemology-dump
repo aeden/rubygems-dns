@@ -44,6 +44,14 @@ def dump_specification( count, lines )
   end
 end
 
+def offset
+  @offset ||= ENV['OFFSET'] || 0
+end
+
+def limit
+  @limit ||= ENV['LIMIT']
+end
+
 File.open( dump_file, "r" ) do |f|
   delimiter     = f.readline
   domain_writer = Rgdns::DomainWriter.new
@@ -55,9 +63,9 @@ File.open( dump_file, "r" ) do |f|
     lines = read_specification_lines( f, delimiter )
     break unless lines.size > 0
     count += 1
+    next if count < offset.to_i
     begin
       specification = load_specification( lines, delimiter )
-      #next unless specification.name == 'objective_command'
       domain_writer.write( specification )
       puts count if count % 1000 == 0
     rescue SyntaxError => se
@@ -67,7 +75,7 @@ File.open( dump_file, "r" ) do |f|
       $stderr.puts "Error in processing specification #{count} #{e}"
       dump_specification( count, lines )
     end
-    #break if count >= 10000
+    break if limit && count >= limit - offset
   end
 
   puts "Processed #{count} specifications"
