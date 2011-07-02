@@ -1,4 +1,12 @@
 require 'sequel'
+
+require 'rgdns/storable'
+require 'rgdns/domain'
+require 'rgdns/record'
+require 'rgdns/soa_record'
+require 'rgdns/ns_record'
+require 'rgdns/ns_record_set'
+
 module Rgdns
   class DomainWriter
   

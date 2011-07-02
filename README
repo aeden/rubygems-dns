@@ -11,3 +11,7 @@ To trigger the webhook:
 To run the resque workers:
 
   rake -I lib QUEUE=* resque:work
+
+To load data
+
+  export DB_URL=mysql://root@localhost/powerdns && bundle exec ruby -I lib ./bin/rgdns-load-gemology-dump specifications.dsv
