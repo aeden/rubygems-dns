@@ -4,43 +4,12 @@ module Rgdns
   
     def write(specification)
       dn = dn(specification)
+
+      domain = Rgdns::Domain.new(dn)
+      domain.save(db)
       
-      domain_id = upsert_domain(dn)
-      upsert_soa_record(domain_id, dn)
-      upsert_ns_records(domain_id, dn)
-
-      insert_records(domain_id, specification)
+      insert_records(domain.id, specification)
     end
-
-    # Insert or update the domain record and return the domain id.
-    def upsert_domain(dn)
-      row = domains_table.filter(:name => dn).first
-      unless row && domain_id = row[:id]
-        domains_table.insert(:name => dn, :type => 'NATIVE')
-        domain_id = domains_table.filter(:name => dn).first[:id]
-      end
-      domain_id
-    end
-    protected :upsert_domain
-
-    def upsert_soa_record(domain_id, dn)
-      soa_record = records_table.filter(:domain_id => domain_id, :name => dn, :type => "SOA").first 
-      insert_record(domain_id, dn, "SOA", 86400, soa_content) unless soa_record
-    end
-    protected :upsert_soa_record
-
-    def soa_content
-      "ns1.rubygems.org admin@rubygems.org #{Time.now.strftime("%Y%m%d%H%M01")} 86400 7200 604800 300"
-    end
-    private :soa_content
-
-    def upsert_ns_records(domain_id, dn)
-      %w(ns1.rubygems.org ns2.rubygems.org).each do |name|
-        ns_record = records_table.filter(:domain_id => domain_id, :name => dn, :type => "NS", :content => name).first
-        insert_record(domain_id, dn, "NS", 3600, name) unless ns_record
-      end
-    end
-    protected :upsert_ns_records
 
     def upsert_latest_cname(domain_id, fqdn_latest, fqdn)
       latest_cname_record = records_table.filter(:domain_id => domain_id, :name => fqdn_latest, :type => "CNAME").first
@@ -139,6 +108,7 @@ module Rgdns
 
     def name_op_version_to_qname(name, op, version)
       vr = op_transform_version(op, version)
+      vr = ['latest'] if vr.empty?
       (vr + [name, base_name]).join(".")
     end
 

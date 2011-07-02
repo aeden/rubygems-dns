@@ -16,6 +16,13 @@ require 'rgdns/webhook/app'
 require 'rgdns/monitor/app'
 require 'rgdns/rubygems_client'
 require 'rgdns/gem_version_data'
+
+require 'rgdns/storable'
+require 'rgdns/domain'
+require 'rgdns/record'
+require 'rgdns/soa_record'
+require 'rgdns/ns_record'
+require 'rgdns/ns_record_set'
 require 'rgdns/domain_writer'
 
 require 'rgdns/resque_job'

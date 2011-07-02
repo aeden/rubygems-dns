@@ -2,10 +2,25 @@ require 'test_helper'
 require 'rgdns'
 
 class DomainWriterTest < Test::Unit::TestCase
+  def with_clean_db
+    db_url = "mysql://root@localhost/powerdns"
+    db = Sequel.connect(db_url)
+    db[:domains].delete
+    db[:records].delete
+    yield db
+  end
+
   def test_write_domain
-    domain_writer = Rgdns::DomainWriter.new
-    records = domain_writer.write(specification)
-    records.each { |r| puts r.join("\t") }
+    with_clean_db do |db|
+      domain_writer = Rgdns::DomainWriter.new
+      domain_writer.write(specification)
+
+      assert_equal 1, db[:domains].filter(:name => "amalgalite.index.rubygems.org").count
+      assert_equal 1, db[:records].filter(:name => "amalgalite.index.rubygems.org", :type => "SOA").count
+      assert_equal 2, db[:records].filter(:name => "amalgalite.index.rubygems.org", :type => "NS").count
+      assert_equal 1, db[:records].filter(:name => "amalgalite.index.rubygems.org", :type => "PTR").count
+      
+    end
   end
 
   def test_op_transform_version_equal
@@ -17,41 +32,25 @@ class DomainWriterTest < Test::Unit::TestCase
   def test_op_transform_version_twiddlewakka
     domain_writer = Rgdns::DomainWriter.new
     res = domain_writer.op_transform_version("~>", "1.2.3")
-    assert_equal res.join("."), "2.1"
+    assert_equal "2.1", res.join(".")
+    
     res = domain_writer.op_transform_version("~>", "2.3")
-    assert_equal res.join("."), "2"
+    assert_equal "2", res.join(".")
+    
     res = domain_writer.op_transform_version("~>", "1")
-    assert_equal res.join("."), ""
+    assert_equal "", res.join(".")
   end
 
   def test_op_transform_version_greater_than
     domain_writer = Rgdns::DomainWriter.new
     res = domain_writer.op_transform_version(">", "1.2.3")
-    assert_equal res.join("."), ""
+    assert_equal "", res.join(".")
   end
 
   def test_op_transform_version_greater_than
     domain_writer = Rgdns::DomainWriter.new
     res = domain_writer.op_transform_version(">=", "1.2.3")
-    assert_equal res.join("."), ""
-  end
-
-  def test_op_transform_version_less_than
-    domain_writer = Rgdns::DomainWriter.new
-    res = domain_writer.op_transform_version("<", "1.2.3")
-    assert_equal res.join("."), "lt.3.2.1"
-  end
-
-  def test_op_transform_version_less_than
-    domain_writer = Rgdns::DomainWriter.new
-    res = domain_writer.op_transform_version("<=", "1.2.3")
-    assert_equal res.join("."), "lte.3.2.1"
-  end
-
-  def test_op_transform_version_not_equal
-    domain_writer = Rgdns::DomainWriter.new
-    res = domain_writer.op_transform_version("!=", "1.2.3")
-    assert_equal res.join("."), "ne.3.2.1"
+    assert_equal "", res.join(".")
   end
 
   private
